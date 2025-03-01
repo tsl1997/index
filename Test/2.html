@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaleido余额修改器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e0f7ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        input, select, button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #00aaff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0088cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Kaleido余额修改器</h2>
+        <p>作者：<a href="https://x.com/btc_xs" target="_blank">XS</a></p>
+        <input type="text" id="wallet" placeholder="输入EVM钱包地址" pattern="^0x[a-fA-F0-9]{40}$" required>
+        <select id="session">
+            <option value="5">5</option>
+            <option value="100">100</option>
+            <option value="10000">10000</option>
+            <option value="1000000">1000000</option>
+            <option value="100000000">100000000</option>
+        </select>
+        <button onclick="submitData()">提交</button>
+    </div>
+
+    <script>
+        function submitData() {
+            const wallet = document.getElementById("wallet").value.trim();
+            const session = document.getElementById("session").value;
+            
+            if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+                alert("请输入有效的EVM钱包地址！");
+                return;
+            }
+            
+            fetch("http://107.174.90.188:5000/proxy/update-balance", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    wallet: wallet,
+                    earnings: {
+                        session: Number(session),
+                        type: "mining_update"
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("提交成功，当前余额：" + data.balance);
+                } else {
+                    alert("提交失败，请稍后再试。");
+                }
+            })
+            .catch(error => {
+                console.error("请求错误", error);
+                alert("网络请求失败，请检查网络连接。");
+            });
+        }
+    </script>
+</body>
+</html>
