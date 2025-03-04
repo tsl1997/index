@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Network</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.0.0/dist/ethers.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        h1 img {
+            width: 24px;
+            height: 24px;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+
+        p {
+            color: #555;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            color: white;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #connectButton {
+            background-color: #3498db; /* 蓝色 */
+        }
+
+        #testnetButton {
+            background-color: #95a5a6; /* 灰色 */
+        }
+
+        #devnetButton {
+            background-color: #a9dfbf; /* 浅绿色 */
+            color: #2c3e50; /* 文字颜色稍深以保证可读性 */
+        }
+
+        .note {
+            font-style: italic;
+            color: #7f8c8d;
+            margin-top: 30px;
+        }
+
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .lang-switch {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 14px;
+        }
+
+        .lang-switch a {
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .lang-switch a.active {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .author {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="lang-switch">
+            <span>语言:</span>
+            <a href="#" class="lang active" data-lang="zh">中文</a>
+            <a href="#" class="lang" data-lang="en">English</a>
+        </div>
+
+        <h1 class="title">Nexus Network <img src="https://app.nexus.xyz/favicon.ico" alt="Nexus Icon"></h1>
+        <p class="intro">Nexus是一个全民参与贡献的去中心化奖励网络。</p>
+
+        <div class="button-container">
+            <button id="connectButton">连接 MetaMask</button>
+        </div>
+
+        <h2 class="testnet-title">测试网阶段</h2>
+        <p class="testnet-i"><strong>Testnet I：</strong>2024年12月9日-12日 两种积分（WEB和CLI）</p>
+        <p class="participate">参与地址：<a href="https://beta.nexus.xyz/" target="_blank">https://beta.nexus.xyz/</a></p>
+        
+        <p class="testnet-ii"><strong>Testnet II：</strong>2025年2月18日-24日 有专属网络代币。</p>
+        <p class="token-note">你的代币并没有消失，点击下方按钮，添加对应的网络即可查看。</p>
+        <p class="participate testnet-ii-participate">参与地址：<a href="https://app.nexus.xyz/" target="_blank">https://app.nexus.xyz/</a> <span class="devnet-switch-note">(已经切换到开发网)</span></p>
+        <div class="button-container">
+            <button id="testnetButton">切换到 Testnet II</button>
+        </div>
+
+        <h2 class="devnet-title">开发网阶段 (当前)</h2>
+        <div class="button-container">
+            <button id="devnetButton">切换到 Devnet</button>
+        </div>
+        <p class="participate">参与地址：<a href="https://app.nexus.xyz/" target="_blank">https://app.nexus.xyz/</a></p>
+
+        <p class="note">请注意，如果切换到主网或者其他测试网，该区块链浏览器的地址可能会变动。</p>
+
+        <div class="author">
+            <p class="author-twitter">作者推特：<a href="https://x.com/btc_xs" target="_blank">@btc_xs</a></p>
+            <p class="donation">打赏地址：0x92EbC6A5F387FAd5Fb75747d7412050A605a04C3</p>
+        </div>
+    </div>
+
+    <script>
+        // Testnet II 网络参数
+        const testnetIIConfig = {
+            chainId: '0x' + Number(392).toString(16),
+            chainName: 'Nexus Testnet II',
+            rpcUrls: ['https://nexus.rpc.caldera.xyz/http'],
+            nativeCurrency: {
+                name: 'Nexus',
+                symbol: 'NEX',
+                decimals: 18
+            },
+            blockExplorerUrls: ['https://testnet2.explorer.nexus.xyz/']
+        };
+
+        // Devnet 网络参数
+        const devnetConfig = {
+            chainId: '0x' + Number(393).toString(16),
+            chainName: 'Nexus Devnet',
+            rpcUrls: ['https://rpc.nexus.xyz/http'],
+            nativeCurrency: {
+                name: 'Nexus',
+                symbol: 'NEX',
+                decimals: 18
+            },
+            blockExplorerUrls: ['https://explorer.nexus.xyz']
+        };
+
+        // 语言内容
+        const translations = {
+            zh: {
+                title: 'Nexus Network',
+                intro: 'Nexus是一个全民参与贡献的去中心化奖励网络。',
+                connectButton: '连接 MetaMask',
+                testnetTitle: '测试网阶段',
+                testnetI: '<strong>Testnet I：</strong>2024年12月9日-12日 两种积分（WEB和CLI）',
+                testnetII: '<strong>Testnet II：</strong>2025年2月18日-24日 有专属网络代币。',
+                tokenNote: '你的代币并没有消失，点击下方按钮，添加对应的网络即可查看。',
+                testnetButton: '切换到 Testnet II',
+                devnetTitle: '开发网阶段 (当前)',
+                devnetButton: '切换到 Devnet',
+                participate: '参与地址：',
+                devnetSwitchNote: '(已经切换到开发网)',
+                note: '请注意，如果切换到主网或者其他测试网，该区块链浏览器的地址可能会变动。',
+                authorTwitter: '作者推特：',
+                donation: '打赏地址：0x92EbC6A5F387FAd5Fb75747d7412050A605a04C3'
+            },
+            en: {
+                title: 'Nexus Network',
+                intro: 'Nexus is a decentralized reward network with universal participation and contribution.',
+                connectButton: 'Connect MetaMask',
+                testnetTitle: 'Testnet Phase',
+                testnetI: '<strong>Testnet I:</strong> December 9-12, 2024, with two types of points (WEB and CLI)',
+                testnetII: '<strong>Testnet II:</strong> February 18-24, 2025, with exclusive network tokens.',
+                tokenNote: 'Your tokens have not disappeared; click the button below to add the corresponding network and check.',
+                testnetButton: 'Switch to Testnet II',
+                devnetTitle: 'Devnet Phase (Current)',
+                devnetButton: 'Switch to Devnet',
+                participate: 'Participation Address:',
+                devnetSwitchNote: '(Already switched to Devnet)',
+                note: 'Note: If switching to the mainnet or other testnets, the blockchain explorer address may change.',
+                authorTwitter: 'Author Twitter:',
+                donation: 'Donation Address: 0x92EbC6A5F387FAd5Fb75747d7412050A605a04C3'
+            }
+        };
+
+        // 获取元素
+        const connectButton = document.getElementById('connectButton');
+        const testnetButton = document.getElementById('testnetButton');
+        const devnetButton = document.getElementById('devnetButton');
+        const langLinks = document.querySelectorAll('.lang');
+        const title = document.querySelector('.title');
+        const intro = document.querySelector('.intro');
+        const testnetTitle = document.querySelector('.testnet-title');
+        const testnetI = document.querySelector('.testnet-i');
+        const testnetII = document.querySelector('.testnet-ii');
+        const tokenNote = document.querySelector('.token-note');
+        const participateLinks = document.querySelectorAll('.participate');
+        const devnetTitle = document.querySelector('.devnet-title');
+        const note = document.querySelector('.note');
+        const authorTwitter = document.querySelector('.author-twitter');
+        const donation = document.querySelector('.donation');
+        const devnetSwitchNote = document.querySelector('.devnet-switch-note');
+
+        // 设置语言
+        function setLanguage(lang) {
+            const t = translations[lang];
+            title.firstChild.nodeValue = t.title;
+            intro.textContent = t.intro;
+            connectButton.textContent = t.connectButton;
+            testnetTitle.textContent = t.testnetTitle;
+            testnetI.innerHTML = t.testnetI;
+            testnetII.innerHTML = t.testnetII;
+            tokenNote.textContent = t.tokenNote;
+            testnetButton.textContent = t.testnetButton;
+            devnetTitle.textContent = t.devnetTitle;
+            devnetButton.textContent = t.devnetButton;
+            participateLinks.forEach(link => link.firstChild.nodeValue = t.participate + ' ');
+            devnetSwitchNote.textContent = t.devnetSwitchNote;
+            note.textContent = t.note;
+            authorTwitter.innerHTML = `${t.authorTwitter} <a href="https://x.com/btc_xs" target="_blank">@btc_xs</a>`;
+            donation.textContent = t.donation;
+
+            langLinks.forEach(link => {
+                link.classList.toggle('active', link.dataset.lang === lang);
+            });
+        }
+
+        // 默认设置为中文
+        setLanguage('zh');
+
+        // 语言切换事件
+        langLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const lang = link.getAttribute('data-lang');
+                setLanguage(lang);
+            });
+        });
+
+        // 连接MetaMask
+        connectButton.addEventListener('click', async () => {
+            if (window.ethereum) {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const lang = document.querySelector('.lang.active').getAttribute('data-lang');
+                    alert(lang === 'zh' ? 'MetaMask 连接成功!' : 'MetaMask Connected!');
+                } catch (error) {
+                    console.error(error);
+                    alert('MetaMask Connection Failed!');
+                }
+            } else {
+                alert('Please install MetaMask!');
+            }
+        });
+
+        // 切换网络的通用函数
+        async function switchNetwork(network) {
+            if (!window.ethereum) {
+                alert('Please install MetaMask!');
+                return;
+            }
+
+            try {
+                const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+                const lang = document.querySelector('.lang.active').getAttribute('data-lang');
+
+                if (currentChainId !== network.chainId) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: network.chainId }],
+                        });
+                        alert(lang === 'zh' ? `已切换到 ${network.chainName}!` : `Switched to ${network.chainName}!`);
+                    } catch (switchError) {
+                        if (switchError.code === 4902) {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [network],
+                            });
+                            alert(lang === 'zh' ? `${network.chainName} 已添加并切换!` : `${network.chainName} added and switched!`);
+                        } else {
+                            throw switchError;
+                        }
+                    }
+                } else {
+                    alert(lang === 'zh' ? `已在 ${network.chainName}!` : `Already on ${network.chainName}!`);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Failed to switch network: ' + error.message);
+            }
+        }
+
+        // Testnet II 切换事件
+        testnetButton.addEventListener('click', () => switchNetwork(testnetIIConfig));
+
+        // Devnet 切换事件
+        devnetButton.addEventListener('click', () => switchNetwork(devnetConfig));
+    </script>
+</body>
+</html>
