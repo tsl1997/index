@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mint KeLiNFT on Nexus Devnet</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.0.0/dist/ethers.umd.min.js"></script>
+    <style>
+        /* 页面基础样式 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f8f1f9 0%, #e8f4f8 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 容器样式 */
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        /* 标题样式 */
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        h1 img {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* 输入框容器 */
+        .input-container {
+            margin: 20px 0;
+            text-align: left;
+            position: relative;
+        }
+
+        label {
+            color: #34495e;
+            font-size: 16px;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .nft-image {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+        }
+
+        /* 按钮样式 */
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            color: white;
+            transition: opacity 0.3s, transform 0.2s;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        #connectButton {
+            background-color: #3498db; /* 蓝色 */
+        }
+
+        #switchButton {
+            background-color: #95a5a6; /* 灰色 */
+        }
+
+        #mintButton {
+            background-color: #e74c3c; /* 红色 */
+        }
+
+        /* 状态提示 */
+        #status {
+            margin-top: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mint KeLiNFT <img src="https://yuansheng.4everland.store/%E5%98%9F%E5%98%9F%E5%8F%AF.jpg" alt="KeLiNFT Icon"></h1>
+
+        <!-- 连接和切换按钮 -->
+        <button id="connectButton">连接 MetaMask</button>
+        <button id="switchButton">切换到 Nexus Devnet</button>
+
+        <!-- 输入框 -->
+        <div class="input-container">
+            <label for="mintAmount">请输入需要 Mint 的数量，当前 NFT 是 KELI：</label>
+            <input type="number" id="mintAmount" value="1" min="1" placeholder="请输入数量" />
+            <!-- <img src="https://yuansheng.4everland.store/%E5%98%9F%E5%98%9F%E5%8F%AF.jpg" alt="NFT Image" class="nft-image"> -->
+        </div>
+
+        <!-- Mint 按钮 -->
+        <button id="mintButton">Mint NFT</button>
+
+        <!-- 状态显示 -->
+        <p id="status">状态: 未连接</p>
+    </div>
+
+    <script>
+        // Nexus Devnet 网络参数
+        const devnetConfig = {
+            chainId: '0x' + Number(393).toString(16),
+            chainName: 'Nexus Devnet',
+            rpcUrls: ['https://rpc.nexus.xyz/http'],
+            nativeCurrency: {
+                name: 'Nexus',
+                symbol: 'NEX',
+                decimals: 18
+            },
+            blockExplorerUrls: ['https://explorer.nexus.xyz']
+        };
+
+        // 合约参数
+        const contractAddress = "0x17368E86834CBfaA99bd021e426F98BC3eA451F1"; // 替换为你的合约地址
+        const contractABI = [
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "toAddress", "type": "address"},
+                    {"internalType": "uint256", "name": "amount", "type": "uint256"}
+                ],
+                "name": "mint",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "totalMinted",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+                "name": "tokenURI",
+                "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // DOM 元素
+        const connectButton = document.getElementById('connectButton');
+        const switchButton = document.getElementById('switchButton');
+        const mintButton = document.getElementById('mintButton');
+        const mintAmount = document.getElementById('mintAmount');
+        const status = document.getElementById('status');
+
+        let provider, signer, contract;
+
+        // 连接 MetaMask
+        connectButton.addEventListener('click', async () => {
+            if (!window.ethereum) {
+                alert('请安装 MetaMask!');
+                return;
+            }
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+                status.textContent = '状态: 已连接 MetaMask';
+            } catch (error) {
+                console.error(error);
+                status.textContent = '状态: 连接失败 - ' + error.message;
+            }
+        });
+
+        // 切换到 Nexus Devnet
+        switchButton.addEventListener('click', async () => {
+            if (!window.ethereum) {
+                alert('请安装 MetaMask!');
+                return;
+            }
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: devnetConfig.chainId }],
+                });
+                status.textContent = '状态: 已切换到 Nexus Devnet';
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [devnetConfig],
+                    });
+                    status.textContent = '状态: Nexus Devnet 已添加并切换';
+                } else {
+                    status.textContent = '状态: 切换失败 - ' + switchError.message;
+                }
+            }
+        });
+
+        // Mint NFT
+        mintButton.addEventListener('click', async () => {
+            if (!contract) {
+                alert('请先连接 MetaMask!');
+                return;
+            }
+
+            const amount = mintAmount.value;
+            if (!amount || isNaN(amount) || amount < 1) {
+                alert('请输入有效的 Mint 数量!');
+                return;
+            }
+
+            try {
+                status.textContent = '状态: 正在 Mint...';
+                const userAddress = await signer.getAddress();
+                const tx = await contract.mint(userAddress, amount);
+                await tx.wait();
+                status.textContent = `状态: Mint 成功! 交易哈希: ${tx.hash}`;
+            } catch (error) {
+                console.error(error);
+                status.textContent = '状态: Mint 失败 - ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
